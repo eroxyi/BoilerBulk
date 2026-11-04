@@ -1,7 +1,4 @@
 # BoilerBulk
-
-A personalized meal planning application for Purdue University students that combines dining court menus, nutritional goals, and class schedules to generate practical daily meal plans.
-
 ## Overview
 
 Finding meals that fit nutritional goals while balancing classes, workouts, and travel time can be challenging for college students. BoilerBulk aims to simplify this process by analyzing available dining court options and generating meal recommendations tailored to each user's needs.
@@ -180,19 +177,6 @@ Example:
 ```
 
 The planner can use these records to subtract consumed calories and protein from the user's daily targets.
-
-## How It Works
-
-The intended planning pipeline consists of the following steps:
-
-1. **Load configuration:** Read the user's nutritional targets, class schedule, dietary restrictions, and external food intake.
-2. **Retrieve menus:** Request daily dining court menu data from Purdue's dining API.
-3. **Parse menu data:** Extract available food items, dining locations, and nutritional information.
-4. **Calculate remaining targets:** Account for externally consumed food to determine remaining daily calorie and protein goals.
-5. **Identify meal windows:** Use the class schedule, dining hours, and estimated travel times to identify feasible meal opportunities.
-6. **Optimize meal selections:** Apply the selected strategy to evaluate available meals.
-7. **Generate the plan:** Organize meal recommendations into a daily schedule.
-8. **Save the results:** Write the generated plan to a text file for convenient reference.
 
 ## Output
 
