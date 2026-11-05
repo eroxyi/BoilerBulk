@@ -1,7 +1,15 @@
-// #include "retrieve.hpp"
+#include "retrieve.hpp"
 #include <ctime>
 #include <curl/curl.h>
 #include <iostream>
+#include <stdio.h>
+
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb,
+                            void *userp) {
+  size_t totalSize = size * nmemb;
+  ((std::string *)userp)->append((char *)contents, totalSize);
+  return totalSize;
+}
 
 void retrieveData() {
   CURL *curl;
@@ -92,7 +100,43 @@ void retrieveData(std::string diningCourt) {
   return;
 }
 
+std::string retrieveNutrition(const std::string itemID) {
+  CURL *curl;
+  CURLcode res;
+
+  std::string readBuffer = "";
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+  curl = curl_easy_init();
+
+  if (curl) {
+    std::string curlUrl =
+        std::string("http://api.hfs.purdue.edu/menus/v2/items/") + itemID;
+
+    std::cout << "LOGGING: " << curlUrl << std::endl;
+
+    curl_easy_setopt(curl, CURLOPT_URL, curlUrl.c_str());
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+    res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+      std::cout << "Something went wrong with curling the data\n";
+      curl_easy_cleanup(curl);
+      return NULL;
+    } else {
+      std::cout << "Information was succesfully retrieved!";
+    }
+
+    curl_easy_cleanup(curl);
+  }
+  curl_global_cleanup();
+  return readBuffer;
+}
+
 int main() {
   retrieveData();
   retrieveData("Earhart");
+  std::cout << retrieveNutrition("9e32c702-f013-4d75-b767-2d411a5c3f32")
+            << std::endl;
 }

@@ -16,4 +16,6 @@ config/user_profile.json
 config/class_schedule.json
 config/external_foods.json
 
+data/*
+
 .env
