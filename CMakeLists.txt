@@ -14,6 +14,7 @@ find_package(nlohmann_json REQUIRED)
 
 add_executable(BoilerBulk
     src/retrieve.cpp
+		src/optimize_protein.cpp
 )
 
 target_include_directories(BoilerBulk PRIVATE 
