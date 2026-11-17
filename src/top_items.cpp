@@ -1,31 +1,8 @@
+#include "top_items.hpp"
+
 #include <algorithm>
 #include <iostream>
-#include <map>
-#include <nlohmann/json.hpp>
-#include <optimize_protein.hpp>
 #include <retrieve.hpp>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-constexpr size_t kTopN = 15;
-constexpr double kMinProtein = 10;
-
-const std::vector<std::string> kMeals = {"Breakfast", "Lunch", "Dinner"};
-
-struct Nutrition {
-  std::string name;
-  double protein = 0.0;
-  double fat = 0.0;
-  int calories = 0;
-  double score = 0.0;
-  bool valid = false;
-};
-
-using NutritionCache = std::unordered_map<std::string, Nutrition>;
-using MealMenus =
-    std::map<std::string,
-             std::unordered_map<std::string, std::vector<std::string>>>;
 
 double scoreFood(double protein, int calories, double healthyFats) {
   return ((protein * 4) / (calories));
@@ -128,6 +105,16 @@ std::vector<std::string> getDiningCourts() {
   return courts;
 }
 
+void fetchAll(NutritionCache &cache, MealMenus &menus) {
+  for (const std::string &court : getDiningCourts()) {
+    std::cerr << "Fetching " << court << "...\n";
+    nlohmann::json menu = retrieveData(court);
+    if (menu.is_discarded())
+      continue;
+    collectItems(menu, court, cache, menus);
+  }
+}
+
 void printSection(const std::string &meal, const MealMenus &menus,
                   const NutritionCache &cache) {
   std::cout << "\n=== " << meal << " ===\n";
@@ -161,22 +148,4 @@ void printSection(const std::string &meal, const MealMenus &menus,
     std::cout << "]: " << f.score << " (" << f.protein << "g protein, "
               << f.calories << " cal)\n";
   }
-}
-
-int main() {
-  NutritionCache cache;
-  MealMenus menus;
-
-  for (const std::string &court : getDiningCourts()) {
-    std::cerr << "Fetching " << court << "...\n";
-    nlohmann::json menu = retrieveData(court);
-    if (menu.is_discarded())
-      continue;
-    collectItems(menu, court, cache, menus);
-  }
-
-  for (const std::string &meal : kMeals) {
-    printSection(meal, menus, cache);
-  }
-  return 0;
 }
