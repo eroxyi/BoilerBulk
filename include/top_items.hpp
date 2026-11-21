@@ -24,7 +24,7 @@ using MealMenus =
     std::map<std::string,
              std::unordered_map<std::string, std::vector<std::string>>>;
 
-double scoreFood(double protein, int calories, double healthyFats);
+double scoreFood(double protein, int calories);
 std::string normalizeMeal(const std::string &name);
 
 const Nutrition &getNutrition(const std::string &itemId,

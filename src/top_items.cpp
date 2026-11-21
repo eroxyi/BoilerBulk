@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <iostream>
 
-double scoreFood(double protein, int calories, double healthyFats) {
-  return ((protein * 4) / (calories));
+double scoreFood(double protein, int calories) {
+  return (protein * 4) / calories;
 }
 
 std::string normalizeMeal(const std::string &name) {
@@ -35,13 +35,11 @@ const Nutrition &getNutrition(const std::string &itemId,
           n.protein = nutrient.value("Value", 0.0);
         } else if (nName == "Calories") {
           n.calories = static_cast<int>(nutrient.value("Value", 0.0));
-        } else if (nName == "Total Fat") {
-          n.fat = nutrient.value("Value", 0.0);
         }
       }
 
-      if (n.calories - n.fat * 9.0 > 0.0 && n.protein >= kMinProtein) {
-        n.score = scoreFood(n.protein, n.calories, n.fat);
+      if (n.calories > 0 && n.protein >= kMinProtein) {
+        n.score = scoreFood(n.protein, n.calories);
         n.valid = true;
       }
     }
