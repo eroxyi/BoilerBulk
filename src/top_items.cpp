@@ -1,8 +1,8 @@
 #include "top_items.hpp"
 
+#include "retrieve.hpp"
 #include <algorithm>
 #include <iostream>
-#include <retrieve.hpp>
 
 double scoreFood(double protein, int calories, double healthyFats) {
   return ((protein * 4) / (calories));

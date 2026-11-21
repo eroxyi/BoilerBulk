@@ -17,7 +17,7 @@ static std::string httpGet(const std::string &url) {
   std::string readBuffer;
 
   if (!curl) {
-    std::cout << "Failed to initialize curl handle\n";
+    std::cerr << "Failed to initialize curl handle\n";
     return "";
   }
 
@@ -28,13 +28,14 @@ static std::string httpGet(const std::string &url) {
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
 
   CURLcode res = curl_easy_perform(curl);
+  curl_easy_cleanup(curl);
+
   if (res != CURLE_OK) {
-    std::cout << "curl error for " << url << "\n";
-    curl_easy_cleanup(curl);
-    return NULL;
+    std::cerr << "curl error for " << url << ": " << curl_easy_strerror(res)
+              << "\n";
+    return "";
   }
 
-  curl_easy_cleanup(curl);
   return readBuffer;
 }
 
