@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     for (const auto &[id, courts] : items)
       for (const std::string &court : courts) {
         const Nutrition &n = cache.at(id);
-        byCourt[court][meal].push_back({n.name, n.protein, n.calories});
+        byCourt[court][meal].push_back({id, n.name, n.protein, n.calories});
       }
 
   if (auto plan = planBestCourt(byCourt, kMeals, goal))
