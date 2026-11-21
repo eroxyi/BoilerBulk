@@ -6,6 +6,7 @@
 #include <vector>
 
 struct PlanItem {
+  std::string id;
   std::string name;
   double protein = 0.0;
   int calories = 0;
