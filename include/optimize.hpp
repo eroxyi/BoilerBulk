@@ -1,4 +1,6 @@
 #pragma once
+#include <algorithm>
+#include <cmath>
 #include <map>
 #include <optional>
 #include <string>
@@ -21,12 +23,68 @@ struct DayPlan {
   bool reached = false;
   double protein = 0.0;
   int calories = 0;
+  double cost = 0.0;
   std::map<std::string, Servings> meals;
+};
+
+enum class Goal { Cut, Maintain, Bulk };
+
+struct Profile {
+  static constexpr double kCaloriesPerKg = 50.0;
+  static constexpr int kDefaultMaxCalories = 4000;
+  static constexpr double kTargetHeadroom = 1.25;
+
+  double weightKg = 0.0;
+  Goal goal = Goal::Maintain;
+  int calorieTarget = 0;
+  double proteinTarget = 0.0;
+
+  static double kcalPerKg(Goal g) {
+    switch (g) {
+    case Goal::Cut:
+      return 27.0;
+    case Goal::Maintain:
+      return 33.0;
+    case Goal::Bulk:
+      return 38.0;
+    }
+    return 33.0;
+  }
+
+  static double proteinPerKg(Goal g) {
+    switch (g) {
+    case Goal::Cut:
+      return 2.2;
+    case Goal::Maintain:
+      return 1.8;
+    case Goal::Bulk:
+      return 2.0;
+    }
+    return 1.8;
+  }
+
+  bool resolve() {
+    if ((calorieTarget <= 0 || proteinTarget <= 0.0) && weightKg <= 0.0)
+      return false;
+    if (calorieTarget <= 0)
+      calorieTarget = static_cast<int>(std::lround(kcalPerKg(goal) * weightKg));
+    if (proteinTarget <= 0.0)
+      proteinTarget = proteinPerKg(goal) * weightKg;
+    return true;
+  }
+
+  int maxCalories() const {
+    int byWeight = weightKg > 0.0
+                       ? static_cast<int>(std::ceil(kCaloriesPerKg * weightKg))
+                       : kDefaultMaxCalories;
+    int byTarget = static_cast<int>(std::ceil(kTargetHeadroom * calorieTarget));
+    return std::max(byWeight, byTarget);
+  }
 };
 
 std::optional<DayPlan> planBestCourt(const CourtMenus &courts,
                                      const std::vector<std::string> &meals,
-                                     double goal);
+                                     const Profile &profile);
 
 void printPlan(const DayPlan &plan, const std::vector<std::string> &meals,
-               double goal);
+               const Profile &profile);
