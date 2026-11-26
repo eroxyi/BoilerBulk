@@ -3,6 +3,7 @@
 #include <cmath>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,6 +30,13 @@ struct DayPlan {
 
 enum class Goal { Cut, Maintain, Bulk };
 
+struct ExternalFood {
+  std::string name;
+  int calories = 0;
+  double protein = 0.0;
+  int quantity = 1;
+};
+
 struct Profile {
   static constexpr double kCaloriesPerKg = 50.0;
   static constexpr int kDefaultMaxCalories = 4000;
@@ -38,6 +46,12 @@ struct Profile {
   Goal goal = Goal::Maintain;
   int calorieTarget = 0;
   double proteinTarget = 0.0;
+
+  int externalCalories = 0;
+  double externalProtein = 0.0;
+  int remainingCalorieTarget = 0;
+  double remainingProteinTarget = 0.0;
+  std::vector<ExternalFood> externalFoods;
 
   static double kcalPerKg(Goal g) {
     switch (g) {
@@ -63,6 +77,18 @@ struct Profile {
     return 1.8;
   }
 
+  void recalculateRemaining() {
+    remainingCalorieTarget = std::max(0, calorieTarget - externalCalories);
+    remainingProteinTarget = std::max(0.0, proteinTarget - externalProtein);
+  }
+
+  void addExternalFood(const ExternalFood &food) {
+    externalFoods.push_back(food);
+    externalCalories += food.calories * food.quantity;
+    externalProtein += food.protein * food.quantity;
+    recalculateRemaining();
+  }
+
   bool resolve() {
     if ((calorieTarget <= 0 || proteinTarget <= 0.0) && weightKg <= 0.0)
       return false;
@@ -70,6 +96,7 @@ struct Profile {
       calorieTarget = static_cast<int>(std::lround(kcalPerKg(goal) * weightKg));
     if (proteinTarget <= 0.0)
       proteinTarget = proteinPerKg(goal) * weightKg;
+    recalculateRemaining();
     return true;
   }
 
@@ -77,7 +104,7 @@ struct Profile {
     int byWeight = weightKg > 0.0
                        ? static_cast<int>(std::ceil(kCaloriesPerKg * weightKg))
                        : kDefaultMaxCalories;
-    int byTarget = static_cast<int>(std::ceil(kTargetHeadroom * calorieTarget));
+    int byTarget = static_cast<int>(std::ceil(kTargetHeadroom * remainingCalorieTarget));
     return std::max(byWeight, byTarget);
   }
 };
@@ -86,5 +113,13 @@ std::optional<DayPlan> planBestCourt(const CourtMenus &courts,
                                      const std::vector<std::string> &meals,
                                      const Profile &profile);
 
+void printPlan(std::ostream &os, const DayPlan &plan,
+               const std::vector<std::string> &meals,
+               const Profile &profile);
+
 void printPlan(const DayPlan &plan, const std::vector<std::string> &meals,
                const Profile &profile);
+
+void savePlan(const std::string &path, const DayPlan &plan,
+              const std::vector<std::string> &meals,
+              const Profile &profile);

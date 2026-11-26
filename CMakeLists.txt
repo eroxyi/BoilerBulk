@@ -36,3 +36,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
+enable_testing()
+add_executable(test_nutrition
+    tests/test_nutrition.cpp
+    src/optimize.cpp
+)
+target_include_directories(test_nutrition PRIVATE 
+    ${PROJECT_SOURCE_DIR}/include 
+)
+add_test(NAME test_nutrition COMMAND test_nutrition)
+

@@ -1,6 +1,7 @@
 #include "optimize.hpp"
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <iostream>
 
 namespace {
@@ -92,7 +93,7 @@ std::vector<double> convolve(const std::vector<double> &A,
 }
 
 double calorieDeviation(const Profile &p, int c) {
-  const double T = p.calorieTarget;
+  const double T = p.remainingCalorieTarget;
   switch (p.goal) {
   case Goal::Cut:
     return std::max(0.0, c - T);
@@ -105,7 +106,7 @@ double calorieDeviation(const Profile &p, int c) {
 }
 
 double planCost(const Profile &p, double protein, int calories) {
-  return kProteinWeight * std::max(0.0, p.proteinTarget - protein) +
+  return kProteinWeight * std::max(0.0, p.remainingProteinTarget - protein) +
          kCalorieWeight * calorieDeviation(p, calories);
 }
 
@@ -147,7 +148,7 @@ DayPlan planCourt(const std::string &court, const CourtMenu &menu,
       target = c;
     }
   }
-  bool reached = F[target] >= profile.proteinTarget - kEps;
+  bool reached = F[target] >= profile.remainingProteinTarget - kEps;
 
   std::vector<int> budget(tables.size(), 0);
   int c = target;
@@ -178,7 +179,7 @@ bool better(const DayPlan &a, const DayPlan &b) {
   return a.calories < b.calories;
 }
 
-} // namespace
+}
 
 std::optional<DayPlan> planBestCourt(const CourtMenus &courts,
                                      const std::vector<std::string> &meals,
@@ -195,24 +196,59 @@ std::optional<DayPlan> planBestCourt(const CourtMenus &courts,
   return best;
 }
 
-void printPlan(const DayPlan &plan, const std::vector<std::string> &meals,
+void printPlan(std::ostream &os, const DayPlan &plan,
+               const std::vector<std::string> &meals,
                const Profile &profile) {
-  std::cout << "\n----- Best court: " << plan.court << " ("
-            << goalName(profile.goal) << ") -----\n";
+  os << "\n----- Best court: " << plan.court << " ("
+     << goalName(profile.goal) << ") -----\n";
+
+  if (!profile.externalFoods.empty()) {
+    os << "\n=== Logged External Foods ===\n";
+    for (const auto &item : profile.externalFoods) {
+      os << item.quantity << "x " << item.name << " ("
+         << item.protein * item.quantity << "g protein, "
+         << item.calories * item.quantity << " cal)\n";
+    }
+    os << "External Total: " << profile.externalProtein << "g protein, "
+       << profile.externalCalories << " cal\n";
+    os << "Remaining Dining Targets: " << profile.remainingProteinTarget
+       << "g protein, " << profile.remainingCalorieTarget << " cal\n";
+  }
+
   if (!plan.reached)
-    std::cout << "(could not reach " << profile.proteinTarget
-              << "g protein; showing best trade-off)\n";
+    os << "(could not reach " << profile.remainingProteinTarget
+       << "g protein; showing best trade-off)\n";
 
   for (const std::string &meal : meals) {
-    std::cout << "\n=== " << meal << " ===\n";
+    os << "\n=== " << meal << " ===\n";
     const Servings &s = plan.meals.at(meal);
     if (s.empty())
-      std::cout << "(nothing)\n";
+      os << "(nothing)\n";
     for (const auto &[item, n] : s)
-      std::cout << n << "x " << item.name << " (" << item.protein * n
-                << "g protein, " << item.calories * n << " cal)\n";
+      os << n << "x " << item.name << " (" << item.protein * n
+         << "g protein, " << item.calories * n << " cal)\n";
   }
-  std::cout << "\nTotal: " << plan.protein << "g protein, " << plan.calories
-            << " cal (targets: " << profile.proteinTarget << "g, "
-            << profile.calorieTarget << " cal)\n";
+
+  os << "\nDining Total: " << plan.protein << "g protein, " << plan.calories
+     << " cal\n";
+  if (!profile.externalFoods.empty()) {
+    os << "Daily Total (including external): "
+       << (plan.protein + profile.externalProtein) << "g protein, "
+       << (plan.calories + profile.externalCalories) << " cal\n";
+  }
+  os << "Daily Targets: " << profile.proteinTarget << "g protein, "
+     << profile.calorieTarget << " cal\n";
+}
+
+void printPlan(const DayPlan &plan, const std::vector<std::string> &meals,
+               const Profile &profile) {
+  printPlan(std::cout, plan, meals, profile);
+}
+
+void savePlan(const std::string &path, const DayPlan &plan,
+              const std::vector<std::string> &meals,
+              const Profile &profile) {
+  std::ofstream out(path);
+  if (out)
+    printPlan(out, plan, meals, profile);
 }
